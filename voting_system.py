@@ -43,13 +43,13 @@ def input_num(message):
 def input_specific_num(start, end, message):
     while True:
         print(message)
-        inp = input(f"Enter number [{start} - {end}] -> ")
+        inp = input(f"-> ")
         if inp and inp.isdigit():
             inp = int(inp)
             if start < inp < end: 
                 return inp
             else:
-                print("\nInvalid Input\n")
+                print(f"\nEnter number [{start+1} - {end-1}] \n")
         else:
                 print("\nInvalid Input\n")
 
@@ -151,7 +151,7 @@ def verify_voter(voter_dict, voted_list):
                         proceed = yes_no()                      # when user can't recall the password
                         match proceed:
                             case "y": continue
-                            case "n": break
+                            case "n": return False
                 continue
             else:
                 print(f"\n{name} Already Voted\nTry with different name\n")
@@ -173,15 +173,13 @@ def voting(party_dict, voted_list, name):
                 i += 1
                 
         # Voting Program
-        vote = input_specific_num(0, i+1, "\nYour Vote")    # User enters a number of whom they vote
+        vote = input_specific_num(0, len(party_dict)+1, "\nYour Vote")                     # User enters a number of whom they vote
         party = list(party_dict.keys())[vote-1]             # Stores voted party's name 
         representative = list(party_dict[party].keys())[0]  # Stores voted Representative's name
-        if 0 < vote <= len(party_dict):                     # Check the correct input
-            party_dict[party][representative] += 1          # Adds one vote at a time to party's representative
-            voted_list.append(name)                         # Adds the name of voter in "voters who voted" list
-            return
-        else:
-            print("\nEnter Valid Input\n")
+
+        party_dict[party][representative] += 1          # Adds one vote at a time to party's representative
+        voted_list.append(name)                         # Adds the name of voter in "voters who voted" list
+        return
 
 # Function to view "Live Results" (Only for admin)
 def live_result(party_dict):
@@ -207,7 +205,7 @@ def winner(party_dict):
 
     win = {}                                                    # Creates a temporary dictionary to store winner party's and representative's name
 
-    # Accessing the party_dict to evaluate the maximim vote and how many party got max much vote
+    # Accessing the party_dict to evaluate the maximum vote and how many party got max much vote
     for party in party_dict:
         for representative in party_dict[party]:
             if max_vote == party_dict[party][representative]:
@@ -216,85 +214,103 @@ def winner(party_dict):
     print(f"\n{"Winner".center(30, "-")}\n")
 
     # if winner is only one
-    if len(win) < 2:
-        print(f"{party} - {representative}")
-    else:                                                       # if more than 1 winner
-        for winner in win:
-            print(f" - {winner} -> {win[winner]}")
-        print("\nThere are more than one winner, so the authority will decide their decision\n")
-    print(f"\n{"Congratulations".center(30,"-")}\n\n{"[ Program Ends ]".center(30,"-")}")
+    for party in win:
+        representative = win[party]
+        if len(win) < 2:
+            print(f"{party} - {representative} - Vote ({party_dict[party][representative]})")
+        else:                                                       # if more than 1 winner
+            for winner in win:
+                print(f" - {winner} -> {win[winner]}")
+            print("\nThere are more than one winner, so the authority will decide their decision\n")
+        print(f"\n{"Congratulations".center(30,"-")}\n\n{"[ Program Ends ]".center(30,"-")}")
 
-# Function for admin to operate (during voting)
-def admin_menu(party_dict,):
-    print("\nAdmin Menu\n")
+def condition_1(party_dict, voter_dict, voted_list):
 
+    task = input_specific_num(-1, 3, "\n Tasks :-\n0. Stop the program\n1. Add Party\n2. Add Voter\n\nTask")
+    match task:
+        case 0: return False
+        case 1: add_party(party_dict); return True
+        case 2: add_voter(voter_dict); return True
+
+def condition_2(party_dict, voter_dict, voted_list):
+
+    task = input_specific_num(-1, 4, "\nTasks: \n1. Add Party\n2. Add Voter\n3. Start Voting")
+    match task:
+        case 0: return False
+        case 1: add_party(party_dict); return True
+        case 2: add_voter(voter_dict); return True
+        case 3:
+            ask = yes_no()
+            if ask == "y":
+                verify = verify_voter(voter_dict, voted_list)
+                if verify:
+                    voting(party_dict, voted_list, verify)
+                    return True
+                else:
+                    return True
+            else:
+                return True
+
+def condition_3(party_dict, voter_dict, voted_list):
+
+    task = input_specific_num(-1, 4, "\nTasks:\n0. Stop the program\n1. Vote\n2. View Live Results\n3. Declare Winner")
+
+    match task:
+        case 1:
+            verify = verify_voter(voter_dict, voted_list)
+            if verify:
+                voting(party_dict, voted_list, verify)
+            else:
+                return True
+        case 2: live_result(party_dict); return True
+        case 3: winner(party_dict); return False
+
+def condition_check(party_dict, voter_dict, voted_list):
     
-    while True:
-        task = input_num("\n1. View Live Results\n0. STOP\n\n")
-        match task:
-            case 1: live_result(party_dict); break
-            case 0: return
-            case _: print("\nEnter either 1 or 0\n"); continue
+    if len(party_dict) >= 2 and len(voter_dict) >= 2:
+        if len(voted_list) != 0:
+            if len(voted_list) == len(voter_dict):
+                return 4
+            else:
+                return 3
+        else:
+            return 2
+    else:
+        return 1
 
 # Program for Voting System
 def voting_system(party_dict, voter_dict, voted_list):
     print("\nWelcome to Voting Managment System\n")
     
     # Verify the admin
-    admin()
-
-    # fAt start the control is in admin's hand 
-    while True:
-        ask = input_num("\nWhat Task to do ?\n1. Add Party\n2. Add Voter\n3. Start Voting\n\n")
-        match ask:
-            case 1: add_party(party_dict)
-            case 2: add_voter(voter_dict)
-            case 3: print("\nSetup done, now you can start voting\n"); break
-            case _: print("\nInvalid Input\nTry Again\n")
-    
-    # Voting Begins
-    print("\nVoting starts from here\n")
-    
-    # Loop for smoothly operations during voting
-    while True:
-
-        # Checks if all registred voters voted or not
-        if len(voted_list) != len(voter_dict):
-            ask = input_num("\nWho is having the device\n1. Admin\n2. Voter\n3. STOP the program\n\n")
-
-            # Admin Handle
-            if ask == 1:
-                admin()
-                admin_menu(party_dict)
-                continue
-
-            # Voter Handle
-            if ask == 2:
-                name = verify_voter(voter_dict, voted_list)
-                voting(party_dict, voted_list, name)
-                continue
-            
-            # Stops the program before the voting of all registered voters
-            if ask == 3:
-
-                # Ensures that all registered voters didn't voted (for double step verification)
-                if len(voted_list) != len(voter_dict):
-
-                    # asks if voting continues or get the results
-                    ask = input_specific_num(0, 3, "\nNot every registered voter voted\nWant to [1] view Results, or [2] continue voting?\n")
-                    match ask:
-                        case 1:                 # Admin will declare the results
-                            admin()
-                            winner(party_dict)
-                        case 2: continue        # Continues voting
-        else:
-
-            # Checks that all voters voted
-            if len(voted_list) == len(voter_dict):
-                print("\nHandover the device to admin\n")
-
-                admin()             # Admin will declare the winner
-                winner(party_dict)
-                break               # Closes the loop, and ends the program
+    admin_verify = admin()
+    if admin_verify:
+        while True:
+            condition = condition_check(party_dict, voter_dict, voted_list)
+            match condition:
+                case 1:
+                    cond = condition_1(party_dict, voter_dict, voted_list)
+                    if cond == False:
+                        print("\nProgram Stopped\n")
+                        break
+                    else:
+                        continue
+                case 2:
+                    cond = condition_2(party_dict, voter_dict, voted_list)
+                    if cond == False:
+                        print("\nProgram Stopped\n")
+                        break
+                    else:
+                        continue
+                case 3:
+                    cond = condition_3(party_dict, voter_dict, voted_list)
+                    if cond == False:
+                        print("\nProgram Stopped\n")
+                        break
+                    else:
+                        continue
+                case 4:
+                    winner(party_dict)
+                    break
 
 voting_system(party_vote, voter_password, voter_voted)
